@@ -3,7 +3,7 @@
 CC := gcc
 OBJ := DEMO
 CFLAGS := -Wall -g
-OBJ_C := ch34x_demo.o ch34x_lib.o
+OBJ_C := spiflash.o ch34x_lib.o file_utils.c
 
 $(OBJ):$(OBJ_C)
 	$(CC) -o $@ $^ $(CFLAGS)
