@@ -21,7 +21,8 @@
 #include <malloc.h>
 
 #include "ch34x_lib.h"
-#include "flash_sst.h"
+#include "spiflash.h"
+#include "file_utils.h"
 
 #ifndef CH34x_DEBUG
 #define CH34x_DEBUG
@@ -44,151 +45,6 @@ struct{
 ULONG enable_data;
 ULONG dir_data;
 ULONG con_data;
-
-/*
- * ********************************************************************
- * InitPara()
- * Function : Init Parallel
- * ********************************************************************
- */
-int InitPara()
-{
-	int retval;
-	unsigned long iMode;
-	iMode = 0x00;
-	retval = CH34xSetParaMode( iMode );
-        if( retval == false )
-        {
-                err("------>SetPara Error");
-                return false;
-        }
-        retval = CH34xInitParallel( iMode );
-        if( retval == false )
-        {
-                err("------->Init Parallel Error\n");
-                return false;
-        }
-	return true;	
-}
-
-/*
- * ********************************************************************
- * CH34x_EppWrite()
- * Function : EPP Write,Write 256 bytes into EPP
- * ********************************************************************
- */
-int CH34x_EppWrite()
-{
-	int retval, i;
-	unsigned long iLength;
-//	unsigned char iBuffer[64] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42};
-	unsigned char iBuffer[255];
-	for( i = 0; i <= 255; i++ )
-		iBuffer[i] = i;
-	iLength = 256;
-	retval = CH34xEppWriteData( iBuffer, iLength );
-	if( retval == false )
-	{
-		err("----------------->Write Error");
-		return false;
-	}
-	return true;
-}
-
-/*
- * ********************************************************************
- * CH34x_EppRead()
- * Function : EPP Read,Read 255 bytes from EPP
- * ********************************************************************
- */
-int CH34x_EppRead()
-{
-	int retval,i;
-	unsigned long ioLength;
-	unsigned char ioBuffer[MAX_BUFFER_LENGTH];
-	ioLength = 256;
-	retval = CH34xEppReadData( ioBuffer, ioLength );
-	if( retval != ioLength )
-	{
-		err("------------->Read Error\n");
-		return false;
-	}
-	for( i = 0; i < ioLength; i++ )
-	{
-		printf("  %d", ioBuffer[i] );
-	}
-	printf("\n");
-	return true;
-}
-
-/*
- * ********************************************************************
- * InitMEM()
- * Function : Init Memory
- * ********************************************************************
- */
-int InitMEM()
-{
-	int retval;
-        retval = CH34xInitMEM();
-        if( retval == false )
-        {
-                err("------->Init Parallel Error\n");
-                return false;
-        }
-	return true;	
-}
-
-/*
- * ********************************************************************
- * CH34x_MEMWrite()
- * Function : MEM Write,Write 255 bytes into MEM
- * ********************************************************************
- */
-int CH34x_MEMWrite()
-{
-	int retval,i;
-	unsigned long iLength;
-//	unsigned char iBuffer[64] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42};
-	unsigned char iBuffer[256];
-	for(i = 0; i < 256; i++)
-		iBuffer[i] = i;
-	iLength = 256;
-	retval = CH34xMEMWriteData( iBuffer, iLength, 1 );
-	if( retval == false )
-	{
-		err("----------------->Write Error");
-		return false;
-	}
-	return true;
-}
-
-/*
- * ********************************************************************
- * CH34x_MEMRead()
- * Function : MEM Read,Read 259 bytes from MEM
- * ********************************************************************
- */
-int CH34x_MEMRead()
-{
-	int retval,i;
-	unsigned long ioLength;
-	unsigned char ioBuffer[MAX_BUFFER_LENGTH];
-	ioLength = 258;
-	retval = CH34xMEMReadData( ioBuffer, ioLength, 0 );
-	printf("ioLength is %d in MEM Read\n",retval);
-	if( retval != ioLength )
-	{
-		err("------------->Read Error\n");
-		return false;
-	}
-	for( i = 0; i <= ioLength; i++ )
-	{
-		printf("  %d", ioBuffer[i] );
-	}
-	printf("\n");
-	return true;
-}
 
 /*
  * ********************************************************************
@@ -235,238 +91,6 @@ int init_device( void )
 
 }
 
-/*
- * ********************************************************************
- * EEPROM_TEST( void )
- *
- * Function : EEPROM Write/Read
- * ********************************************************************
- */
-void EEPROM_TEST( void )
-{
-//Write EEPROM
-	int retval = 0;
-	UCHAR iBuf;	
-	printf("Please input a byte into EEPROM:\n");
-	scanf( "%x", &iBuf );
-	printf("You input 0x%x\n", iBuf);
-	retval = CH34xWriteEEPROM( ID_24C08, 0x0000, 1, &iBuf );
-	if( retval == false )
-	{
-		err("I2C Write Error");
-		return -1;
-	}
-
-	sleep(1);
-//Read EEPROM	
-	PUCHAR oBuffer ;
-	oBuffer = (PUCHAR)malloc( sizeof(unsigned char) * 30 );
-	retval = CH34xReadEEPROM( ID_24C08, 0x0000, 20, oBuffer );
-	if( retval == false )
-	{
-		err("I2C Read Error");
-		return -1;
-	}
-	printf("Output is 0x%x\n", oBuffer[0]);
-	free( oBuffer );
-}
-
-/*
- * ********************************************************************
- * EPP_TEST()
- *
- * Function : EPP Write/Read
- * ********************************************************************
- */
-void EPP_TEST()
-{
-//EPP Write/Read
-	int retval = 0;
-	if((retval = InitPara()) == false)
-	{
-		err("Init Para Error\n");
-	}
-	if((retval = CH34x_EppWrite()) == false )
-	{
-		err("Epp Write Error\n");
-	}
-	if((retval = CH34x_EppRead()) == false )
-	{
-		err("Read Error");
-	}
-}
-
-/*
- * ********************************************************************
- * MEM_TEST()
- *
- * Function : MEM Write/Read
- * ********************************************************************
- */
-void MEM_TEST()
-{
-//MEM Write/Read
-	int retval = 0;
-	if((retval = InitMEM()) == false)
-	{
-		err("Init MEM Error\n");
-	}
-	if((retval = CH34x_MEMWrite()) == false )
-	{
-		err("MEM Write Error\n");
-	}
-	if((retval = CH34x_MEMRead()) == false )
-	{
-		err("MEM Read Error");
-	}
-}
-
-/*
- * ********************************************************************
- * SPI_FLASH_TEST()
- *
- * Function : FLASH Write/Read
- * Note: this function does not include save unused data 
- * ********************************************************************
- */
-int SPI_FLASH_TEST()
-{
-//Read  Block SPI ( MAX 1024 Every one )
-/*	UCHAR oBuffer[MAX_BUFFER_LENGTH];
-	if( CH34x_Flash_ReadBlock(NULL,0x00) == false )
-	{
-		printf("Read block Error\n");
-	}
-*/
-
-	if( CH34xWriteSPI() == false )
-	{
-		printf("Write SPI Error\n");
-		return false;
-	}
-	if( CH34xReadSPI() == false )
-	{
-		printf("Read SPI Error\n");
-		return false;
-	}	
-
-}
-
-
-/*
- * ********************************************************************
- *  SETOUTPUT_TEST()
- *
- * Function : Set direction and output data of CH341 
- * Note: refer to fuction of CH34xSetOutput() in lib
- * ********************************************************************
- */
-int SETOUTPUT_TEST(void)
-{
-	printf("input the enable data(Hex):\n");
-	scanf("%x",&enable_data);
-	printf("input the direction data(Hex):\n");
-	scanf("%x",&dir_data);
-	printf("input the control data(Hex):\n");
-	scanf("%x",&con_data); 
-	if( CH34xSetOutput(enable_data, dir_data, con_data) == false)
-	{
-		printf("Set Output Error!\n");
-		return false;
-	}
-	return true;
-}
-
-/*
- * ********************************************************************
- *  SETOUTPUT_TEST()
- *
- * Function : Set direction and output data of D5-D0 on CH341
- * Note: refer to fuction of CH34xSet_D5_D0() in lib
- * ********************************************************************
- */
-
-int SET_D5_D0_TEST(void)
-{
-	printf("input the direction data(Hex):\n");
-	scanf("%x",&dir_data);
-	printf("input the control data(Hex):\n");
-	scanf("%x",&con_data); 
-	if(CH34xSet_D5_D0((UCHAR)dir_data, (UCHAR)con_data) == false)
-	{
-		printf("Set D5_D0 Error!\n");
-		return false;
-	}
-	return true;
-}
-
-
-
-void ShowMainMenu( void )
-{
-	printf("This is main menu listed\n");
-	printf("-->1: EEPROM TEST\n");
-	printf("-->2: EPP TEST\n");
-	printf("-->3: MEM TEST\n");
-	printf("-->4: SPI FLASH TEST( SST25VF512 )\n");
-	printf("-->5: SETOUTPUT TEST\n");
-	printf("-->6: SET_D5_D0 TEST\n");
-	printf("Please enter your selection:\n");
-	
-}
-
-int main( int argc, char **argv )
-{
-	int ch;
-	char button = '\0';
-	int retval = 0;
-	retval = init_device();
-	if( retval == -1 )
-	{	
-		printf("Init device error\n");
-		return false;
-	}
-
-	while(1)
-	{
-		ShowMainMenu();
-		scanf("%d",&ch);
-		printf("You choose %d \n",ch);
-		switch(ch)
-		{
-		    case 1:
-			EEPROM_TEST();
-			break;
-		    case 2:
-			EPP_TEST();
-			break;
-		    case 3:
-			MEM_TEST();
-			break;
-		    case 4:
-			SPI_FLASH_TEST();
-			break;
-		    case 5:
-			SETOUTPUT_TEST();
-			break;
-		    case 6:
-			SET_D5_D0_TEST();
-			break;
-		    default:
-			break;	
-		}
-		do
-		{
-			printf("\nenter 'q' to exit or 'b' to come back\n");
-			scanf(" %c", &button);
-		}while( button != 'q' && button != 'b' );
-		if( button == 'q' )
-			break;
-	}
-
-	CH34xCloseDevice(); 
-	return 0;
-}
 
 int ReadFlashId()
 {
@@ -651,7 +275,7 @@ BOOL CH34xWriteSPI()
 		return false;
 	}
 /*	retval = CH34x_Flash_ReadByte( BufData, 0x0000 );
-	if( retval == false )
+f( retval == false )
 	{
 		printf("error in flash ReadByte\n");
 		return false;
@@ -678,4 +302,122 @@ BOOL CH34xWriteSPI()
 	free( BufData );
 	return true;
 
+	
 }
+
+int WriteBIOS(char *file)
+{ 
+	FILE *fp;
+	char *buff=NULL;
+	unsigned int *file_size=0;
+	int ret=0;
+	int nbytes=0;i
+	unsigned int *file_siz=0;
+	
+	if(file==NULL)
+		return 0;
+
+	ret=file_open(&fp, file, +r);
+	if(ret==0)
+		return -1;
+	get_file_size(fp, &file_size);
+	buff=(char *)molloc(file_size);
+	memset(buff,0,file_size)
+	file_read(fp, buff, file_size,&nbytes);
+	
+	retval = CH34xFlashReadStatus();
+	if( retval == false )
+	{
+		printf("error in flash status\n");
+		return false;
+	}
+/*	retval = CH34x_Flash_ReadByte( BufData, 0x0000 );
+f( retval == false )
+	{
+		printf("error in flash ReadByte\n");
+		return false;
+	}
+*/
+	retval = CH34xSectorErase( 0x0000 );
+	if( retval == false )
+	{
+		printf("error in flash Sector Erase\n");
+		return false;
+	}
+
+//	BufData[0] = 0xaa;
+//	BufData[1] = 0x55;
+	printf("Please input 2 number:\n");
+	for( i = 0; i < 2; i++ )
+		scanf("%x", &BufData[i]);
+	retval = CH34x_Flash_Write( BufData, 0x0000 );
+	if( retval == false )
+	{
+		printf("error in flash Write\n");
+		return false;
+	}
+
+
+
+	file_close(&fp);
+	free(buff);
+
+	
+}
+void ShowMainMenu( void )
+{
+	printf("This is main menu listed\n");
+	printf("-->1: Read Id\n");
+	printf("-->2: SectorErase\n");
+	printf("-->3: ReadStatus\n");
+	printf("-->4: ReadSpi\n");
+	printf("-->5: WriteSpi\n");
+	printf("-->6: ReadBIOS\n");
+	printf("-->7: WriteBIOS\n");
+	printf("Please enter your selection:\n");
+	
+}
+int main( int argc, char **argv )
+{
+	int ch;
+	char button = '\0';
+	int retval = 0;
+	retval = init_device();
+	if( retval == -1 )
+	{	
+		printf("Init device error\n");
+		return false;
+	}
+
+	while(1)
+	{
+		ShowMainMenu();
+		scanf("%d",&ch);
+		printf("You choose %d \n",ch);
+		switch(ch)
+		{
+		    case 1:
+			;// EEPROM_TEST();
+			break;
+		    case 2:
+			;// EPP_TEST();
+			break;
+		    case 3:
+			;// MEM_TEST();
+			break;
+		    case 4:
+			;// SPI_FLASH_TEST();
+		}
+		do
+		{
+			printf("\nenter 'q' to exit or 'b' to come back\n");
+			scanf(" %c", &button);
+		}while( button != 'q' && button != 'b' );
+		if( button == 'q' )
+			break;
+	}
+
+	CH34xCloseDevice(); 
+	return 0;
+}
+
