@@ -40,7 +40,7 @@
 
 int dev_fd;
 unsigned char VenIC;
-unsigned char StreamMode = 1;
+unsigned char StreamMode = 0;
 
 /*
  * ********************************************************************

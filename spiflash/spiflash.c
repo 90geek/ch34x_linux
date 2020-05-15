@@ -107,6 +107,22 @@ int ReadFlashId()
 	else	
 		return mWrBuf[5];
 }
+int ReadFlashJedecId()
+{
+	ULONG mLen, iChipselect;
+	UCHAR mWrBuf[6];
+	mWrBuf[0] = ReadID;
+	mWrBuf[1] = 0x00;
+	mWrBuf[2] = 0x00;
+	mWrBuf[3] = 0x00;
+	iChipselect = 0x80;
+	mLen = 6;
+	if( CH34xStreamSPI4( iChipselect, mLen, mWrBuf ) == false )
+		return false;
+	else	
+		return mWrBuf[5];
+}
+
 
 BOOL CH34xWriteEnable()
 {
@@ -310,19 +326,22 @@ int WriteBIOS(char *file)
 	FILE *fp;
 	char *buff=NULL;
 	unsigned int *file_size=0;
-	int ret=0;
-	int nbytes=0;i
+	int retval=0;
+	int i;
+	int nbytes=0;
 	unsigned int *file_siz=0;
+	PUCHAR BufData;
+
 	
 	if(file==NULL)
 		return 0;
 
-	ret=file_open(&fp, file, +r);
-	if(ret==0)
+	retval=file_open(&fp, file, "+r");
+	if(retval==0)
 		return -1;
 	get_file_size(fp, &file_size);
-	buff=(char *)molloc(file_size);
-	memset(buff,0,file_size)
+	buff=(char *)malloc(file_size);
+	memset(buff,0,file_size);
 	file_read(fp, buff, file_size,&nbytes);
 	
 	retval = CH34xFlashReadStatus();
@@ -357,8 +376,6 @@ f( retval == false )
 		return false;
 	}
 
-
-
 	file_close(&fp);
 	free(buff);
 
@@ -383,6 +400,7 @@ int main( int argc, char **argv )
 	char button = '\0';
 	int retval = 0;
 	retval = init_device();
+	int id;
 	if( retval == -1 )
 	{	
 		printf("Init device error\n");
@@ -396,16 +414,21 @@ int main( int argc, char **argv )
 		printf("You choose %d \n",ch);
 		switch(ch)
 		{
-		    case 1:
+			case 1:
+				id = ReadFlashId();
+				if(id!=false)
+					printf("Device id:0x%x\n",id);
+				break;
+		    case 2:
 			;// EEPROM_TEST();
 			break;
-		    case 2:
+		    case 3:
 			;// EPP_TEST();
 			break;
-		    case 3:
+		    case 4:
 			;// MEM_TEST();
 			break;
-		    case 4:
+		    case 5:
 			;// SPI_FLASH_TEST();
 		}
 		do
