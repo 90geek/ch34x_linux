@@ -1,0 +1,1 @@
+cmd_/home/loongson/data/code/ch431/ch34x_linux/driver/ch34x_pis.ko := ld -r  -m elf64ltsmip -T ./scripts/module-common.lds --build-id  -o /home/loongson/data/code/ch431/ch34x_linux/driver/ch34x_pis.ko /home/loongson/data/code/ch431/ch34x_linux/driver/ch34x_pis.o /home/loongson/data/code/ch431/ch34x_linux/driver/ch34x_pis.mod.o

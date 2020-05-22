@@ -508,7 +508,7 @@ BOOL CH34xWriteData( PVOID iBuffer, PULONG ioLength )
 	{
 		printf("error in pipe down\n");
 		return false;	
-	}	
+	}
 
 	free( Write.ByteBuffer );
 	return true;
@@ -1109,7 +1109,12 @@ BOOL CH34xStreamSPIx( ULONG iChipselect, ULONG iLength,
 			if( StreamMode & 0x80 )
 			{
 				for( i = 0; i < iLength; i++ )
+				{
 					*((PUCHAR)ioBuffer + i) = mMsbTable[*((PUCHAR)ioBuffer + i)];
+					// printf("0x%x\t",*((PUCHAR)ioBuffer + i));
+				}
+				// printf("\n");
+
 			}
 		}
 		else

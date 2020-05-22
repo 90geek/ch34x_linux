@@ -105,13 +105,14 @@ int ReadFlashId()
 	if( CH34xStreamSPI4( iChipselect, mLen, mWrBuf ) == false )
 		return false;
 	else	
-		return mWrBuf[5];
+		return (mWrBuf[5]|(mWrBuf[4]<<8));
 }
 int ReadFlashJedecId()
 {
 	ULONG mLen, iChipselect;
+	
 	UCHAR mWrBuf[6];
-	mWrBuf[0] = ReadID;
+	mWrBuf[0] = JEDECID;
 	mWrBuf[1] = 0x00;
 	mWrBuf[2] = 0x00;
 	mWrBuf[3] = 0x00;
@@ -120,7 +121,7 @@ int ReadFlashJedecId()
 	if( CH34xStreamSPI4( iChipselect, mLen, mWrBuf ) == false )
 		return false;
 	else	
-		return mWrBuf[5];
+		return (mWrBuf[3]|(mWrBuf[2]<<8));
 }
 
 
@@ -145,9 +146,9 @@ BOOL CH34xSectorErase( ULONG StartAddr )
 		return false;
 	mWrBuf[0] = Sector_Erase;
 	mWrBuf[1] = (UCHAR)( StartAddr >> 16 & 0xff );
-	mWrBuf[2] = (UCHAR)( StartAddr >> 8 & 0xf0 );
-	mWrBuf[3] = 0x00;
-	mLen = 4;	
+	mWrBuf[2] = (UCHAR)( StartAddr >> 8 & 0xff );
+	mWrBuf[3] = (UCHAR)( StartAddr & 0xff );
+	mLen = 4;
 	iChipselect = 0x80;
 	if( CH34xStreamSPI4( iChipselect, mLen, mWrBuf ) == false )
 		return false;
@@ -267,6 +268,29 @@ BOOL CH34x_Flash_Write( PVOID iBuffer, ULONG iAddr )
 	return true;
 }
 
+BOOL CH34x_Flash_Write_Byte( PVOID iBuffer, ULONG iAddr )
+{
+	ULONG i;
+	ULONG iChipselect = 0x80;
+	UCHAR mWrBuf[5];
+	ULONG mLen = 5;
+	
+	if( !CH34xWriteEnable() )
+		return false;
+	mWrBuf[0] = Byte_Program;
+	mWrBuf[1] = (UCHAR)(iAddr >> 16 & 0xff);
+	mWrBuf[2] = (UCHAR)(iAddr >> 8 & 0xff);
+	mWrBuf[3] = (UCHAR)(iAddr & 0xff);
+	mWrBuf[4] = *((PUCHAR)iBuffer );
+	if( CH34xStreamSPI4( iChipselect, mLen, mWrBuf ) == false )
+		return false;
+	memset( mWrBuf, 0, sizeof( UCHAR ) * mLen );
+	if( !CH34xFlash_Wait() )
+		return false;
+
+	return true;
+}
+
 BOOL CH34xReadSPI()
 {
 	ULONG mLen;
@@ -321,76 +345,77 @@ f( retval == false )
 	
 }
 
-int WriteBIOS(char *file)
+int WriteBIOS(const char *file)
 { 
 	FILE *fp;
-	char *buff=NULL;
 	unsigned int *file_size=0;
 	int retval=0;
 	int i;
 	int nbytes=0;
 	unsigned int *file_siz=0;
-	PUCHAR BufData;
+	PUCHAR BufData=NULL;
+	unsigned int addr=0;
 
 	
 	if(file==NULL)
 		return 0;
 
-	retval=file_open(&fp, file, "+r");
-	if(retval==0)
+	retval=file_open(&fp, file, "rb+");
+	if(retval!=0)
 		return -1;
 	get_file_size(fp, &file_size);
-	buff=(char *)malloc(file_size);
-	memset(buff,0,file_size);
-	file_read(fp, buff, file_size,&nbytes);
-	
+	BufData=(char *)malloc(file_size);
+	memset(BufData,0,file_size);
+	file_read(fp,BufData, file_size,&nbytes);
+	printf("file_size=%d(0x%x)\n",file_size,file_size);
 	retval = CH34xFlashReadStatus();
 	if( retval == false )
 	{
 		printf("error in flash status\n");
 		return false;
 	}
-/*	retval = CH34x_Flash_ReadByte( BufData, 0x0000 );
-f( retval == false )
-	{
-		printf("error in flash ReadByte\n");
-		return false;
-	}
-*/
-	retval = CH34xSectorErase( 0x0000 );
-	if( retval == false )
-	{
-		printf("error in flash Sector Erase\n");
-		return false;
-	}
 
-//	BufData[0] = 0xaa;
-//	BufData[1] = 0x55;
-	printf("Please input 2 number:\n");
-	for( i = 0; i < 2; i++ )
-		scanf("%x", &BufData[i]);
-	retval = CH34x_Flash_Write( BufData, 0x0000 );
-	if( retval == false )
-	{
-		printf("error in flash Write\n");
-		return false;
-	}
+	do{
+		retval = CH34xSectorErase(addr);
+		if( retval == false )
+		{
+			printf("error in flash Sector Erase\n");
+			return false;
+		}
+		addr += 0x1000;
+		if((addr%(4*0x1000))==0)
+			printf("*");
+		usleep(1);
+	}while(addr<file_size);
+	printf("Erase Ok!\n");
+	// addr = 0;
+	// for(i=0;i<file_size;i++)
+	// {
+	// 	retval =CH34x_Flash_Write_Byte(BufData+i, addr+i);
+	// 	if( retval == false )
+	// 	{
+	// 		printf("error in flash Write\n");
+	// 		return false;
+	// 	}
+	// 	if((i%(4*0x1000))==0)
+	// 		printf("*");
+	// }
+	// printf("Program Ok!\n");
 
 	file_close(&fp);
-	free(buff);
-
-	
+	free(BufData);
 }
 void ShowMainMenu( void )
 {
 	printf("This is main menu listed\n");
 	printf("-->1: Read Id\n");
-	printf("-->2: SectorErase\n");
-	printf("-->3: ReadStatus\n");
-	printf("-->4: ReadSpi\n");
-	printf("-->5: WriteSpi\n");
-	printf("-->6: ReadBIOS\n");
-	printf("-->7: WriteBIOS\n");
+	printf("-->2: Read JEDEC Id\n");
+	printf("-->3: SectorErase\n");
+	printf("-->4: ReadStatus\n");
+	printf("-->5: ReadSpi\n");
+	printf("-->6: WriteSpi\n");
+	printf("-->7: ReadBIOS\n");
+	printf("-->8: WriteBIOS\n");
 	printf("Please enter your selection:\n");
 	
 }
@@ -420,7 +445,10 @@ int main( int argc, char **argv )
 					printf("Device id:0x%x\n",id);
 				break;
 		    case 2:
-			;// EEPROM_TEST();
+				id = ReadFlashJedecId();
+				if(id!=false)
+					printf("JEDEC id:0x%x\n",id);
+				break;
 			break;
 		    case 3:
 			;// EPP_TEST();
@@ -430,6 +458,9 @@ int main( int argc, char **argv )
 			break;
 		    case 5:
 			;// SPI_FLASH_TEST();
+			case 8:
+				WriteBIOS("LS3A40007A.fd");
+
 		}
 		do
 		{
