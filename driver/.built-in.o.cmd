@@ -1,1 +1,0 @@
-cmd_/home/loongson/data/code/ch431/ch34x_linux/driver/built-in.o :=  rm -f /home/loongson/data/code/ch431/ch34x_linux/driver/built-in.o; ar rcsD /home/loongson/data/code/ch431/ch34x_linux/driver/built-in.o

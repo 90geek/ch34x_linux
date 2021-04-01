@@ -330,7 +330,7 @@ ssize_t ch34x_fops_read(struct file *file, char __user *to_user,
 		retval = usb_bulk_msg( dev->udev, usb_rcvbulkpipe( dev->udev,
 				dev->bulk_in_endpointAddr ), 
 				dev->bulk_in_buffer + i * bytes_read, 
-						Bytes, &Returnlen, 10000 );
+						Bytes, (int *)&Returnlen, 10000 );
 	
 		if( retval )
 		{

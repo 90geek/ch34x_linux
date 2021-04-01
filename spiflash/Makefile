@@ -1,7 +1,7 @@
 # Makefile for WCH CH34x chips
 
 CC := gcc
-OBJ := DEMO
+OBJ := app
 CFLAGS := -Wall -g
 OBJ_C := spiflash.o ch34x_lib.o file_utils.c
 

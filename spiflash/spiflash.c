@@ -355,6 +355,7 @@ int WriteBIOS(const char *file)
 	unsigned int *file_siz=0;
 	PUCHAR BufData=NULL;
 	unsigned int addr=0;
+  int count=0;
 
 	
 	if(file==NULL)
@@ -384,23 +385,34 @@ int WriteBIOS(const char *file)
 		}
 		addr += 0x1000;
 		if((addr%(4*0x1000))==0)
-			printf("*");
+    {
+			printf(".");
+      count++;
+      if((count%32)==0)
+        printf("\n");
+    }
 		usleep(1);
 	}while(addr<file_size);
-	printf("Erase Ok!\n");
-	// addr = 0;
-	// for(i=0;i<file_size;i++)
-	// {
-	// 	retval =CH34x_Flash_Write_Byte(BufData+i, addr+i);
-	// 	if( retval == false )
-	// 	{
-	// 		printf("error in flash Write\n");
-	// 		return false;
-	// 	}
-	// 	if((i%(4*0x1000))==0)
-	// 		printf("*");
-	// }
-	// printf("Program Ok!\n");
+	printf("\nErase Ok!\n");
+	addr = 0;
+  count=0;
+	for(i=0;i<file_size;i++)
+	{
+		retval =CH34x_Flash_Write_Byte(BufData+i, addr+i);
+		if( retval == false )
+		{
+			printf("error in flash Write\n");
+			return false;
+		}
+		if((i%(4*0x1000))==0)
+    {
+			printf(".");
+      count++;
+      if((count%32)==0)
+        printf("\n");
+    }
+	}
+	printf("\nProgram Ok!\n");
 
 	file_close(&fp);
 	free(BufData);

@@ -35,7 +35,7 @@
 #define CH34x_I2C_WRITE_MODE                    0x00000008
 #define CH34x_PIPE_DATA_DOWN                    0x00000009
 #define CH34x_PIPE_WRITE_READ                   0x0000000a
-#define CH34x_PIPE_DEVICE_CTRL			0x0000000b
+#define CH34x_PIPE_DEVICE_CTRL                  0x0000000b
 
 
 int dev_fd;
@@ -60,9 +60,10 @@ int CH34xOpenDevice( UCHAR index )
 	if( dev_fd == -1 )
 	{
 		printf("open /dev/ch34x_pis error, LINE : %d\n",__LINE__ );	
+	  close( dev_fd );
 		return false;
 	}
-//	printf("Open successful\n");
+	printf("Open successful\n");
 	
 	return dev_fd;
 }
@@ -500,9 +501,9 @@ BOOL CH34xWriteData( PVOID iBuffer, PULONG ioLength )
 	Write.length = ioLength;
 	Write.ByteBuffer = (PUCHAR)malloc( sizeof( unsigned char ) * mLen );
 	memcpy( Write.ByteBuffer, (PUCHAR)iBuffer, mLen );
-	printf("ByteBuffer:");
-	for(i=0;i<mLen;i++) printf("%.2x ",Write.ByteBuffer[i]);
-	printf("Write.Lenth:%d \n",*((ULONG *)Write.length));
+	// printf("ByteBuffer:");
+	// for(i=0;i<mLen;i++) printf("%.2x ",Write.ByteBuffer[i]);
+	// printf("Write.Lenth:%d \n",*((ULONG *)Write.length));
 	retval = ioctl( dev_fd, CH34x_PIPE_DATA_DOWN, (unsigned long)&Write );
 	if ( retval == -1 )
 	{
@@ -1156,7 +1157,7 @@ BOOL CH34xStreamSPI4( ULONG iChipSelect, ULONG iLength, PVOID ioBuffer )
 	int retval = 0;
 	if( VenIC >= 0x25 && VenIC < 0x30 )
 		return false;
-	StreamMode = 0x81;
+	StreamMode = 0x85;
 	if( StreamMode & 0x04 )
 	{
 		if( CH34xSetStream( StreamMode & 0xFB ) == false )
